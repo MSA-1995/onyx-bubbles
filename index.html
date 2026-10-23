@@ -3,23 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>فقاعات الأذكار - نموذج تجريبي</title>
+<title>فقاعات الأذكار - مسجد</title>
 <style>
-  html,body{margin:0;height:100%;overflow:hidden;background:#1e1f22;font-family:"Segoe UI",Tahoma,sans-serif;user-select:none}
-  #bg{position:fixed;inset:0;overflow:hidden;background:linear-gradient(180deg,#05081a 0%,#0a0e2a 55%,#100a22 100%)}
-  .aurora{position:absolute;width:70vmax;height:40vmax;border-radius:50%;filter:blur(80px);opacity:.16}
-  .a1{background:#00e0b0;left:-20%;top:-10%;animation:drift1 16s ease-in-out infinite alternate}
-  .a2{background:#7a4dff;right:-25%;top:5%;animation:drift2 20s ease-in-out infinite alternate}
-  .a3{background:#ff4da6;left:15%;top:35%;opacity:.09;animation:drift3 24s ease-in-out infinite alternate}
-  @keyframes drift1{to{transform:translate(35vw,12vh) rotate(25deg) scale(1.2)}}
-  @keyframes drift2{to{transform:translate(-40vw,18vh) rotate(-20deg) scale(.9)}}
-  @keyframes drift3{to{transform:translate(30vw,-15vh) rotate(15deg) scale(1.3)}}
+  html,body{margin:0;height:100%;overflow:hidden;background:#050920;font-family:"Segoe UI",Tahoma,sans-serif;user-select:none}
+  #bg{position:fixed;inset:0;overflow:hidden;background:linear-gradient(180deg,#050920 0%,#181350 58%,#2f1c52 100%)}
+  #bg>*{position:absolute;pointer-events:none}
+  #stars{inset:0}
   .star{position:absolute;border-radius:50%;background:#fff;animation:tw ease-in-out infinite alternate}
   @keyframes tw{from{opacity:.08;transform:scale(.7)}to{opacity:.6;transform:scale(1.2)}}
   .shoot{position:absolute;height:2px;width:140px;background:linear-gradient(90deg,rgba(255,255,255,0),#fff);border-radius:2px;transform:rotate(-25deg);opacity:0}
-  .moon{position:absolute;top:9%;right:9%;width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#d8d3b8,#b8b08a 60%,#8f8862);opacity:.8;
-    box-shadow:0 0 18px 4px rgba(255,240,170,.12);animation:moon 6s ease-in-out infinite alternate}
-  @keyframes moon{to{box-shadow:0 0 28px 8px rgba(255,240,170,.2)}}
+  .crescent{top:9%;right:11%;width:62px;height:62px;border-radius:50%;box-shadow:inset -17px 4px 0 0 #efe2a8;transform:rotate(-18deg);filter:drop-shadow(0 0 10px rgba(255,235,160,.35))}
+  .glow{left:0;right:0;bottom:0;height:34vh;background:radial-gradient(ellipse at 50% 100%,rgba(255,190,100,.16),rgba(255,190,100,0) 65%)}
+  .mosque{left:0;right:0;bottom:0;width:100%;height:28vh}
+  .win{fill:#ffc86b;animation:flick 3.2s ease-in-out infinite alternate;filter:drop-shadow(0 0 3px #ffb64d)}
+  .win:nth-child(2n){animation-duration:4.1s;animation-delay:-1s}
+  .win:nth-child(3n){animation-duration:2.6s;animation-delay:-.4s}
+  @keyframes flick{from{opacity:.55}to{opacity:1}}
+  /* الفوانيس */
+  .lamp{top:-6px;transform-origin:50% 0;animation:swing ease-in-out infinite alternate}
+  .lamp svg{display:block;height:100%;overflow:visible}
+  .lamp .lt{animation:lflick 2.8s ease-in-out infinite alternate}
+  @keyframes swing{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}
+  @keyframes lflick{from{opacity:.78}to{opacity:1}}
+  /* الفقاعات */
   #sky{position:fixed;inset:0}
   .bubble{position:absolute;top:-90px;border-radius:50%;cursor:pointer;
     background:radial-gradient(circle at 30% 28%,rgba(255,255,255,.85) 0 6%,rgba(255,255,255,.18) 14%,hsla(var(--h),var(--s),70%,.28) 55%,hsla(var(--h),var(--s),58%,.5) 100%);
@@ -30,68 +36,78 @@
   .bubble:hover{filter:brightness(1.25)}
   .ring{position:absolute;border-radius:50%;border:3px solid rgba(160,220,255,.9);pointer-events:none;animation:ring .55s ease-out forwards}
   @keyframes ring{from{transform:translate(-50%,-50%) scale(.3);opacity:1}to{transform:translate(-50%,-50%) scale(2.2);opacity:0}}
-  .drop{position:absolute;width:9px;height:9px;border-radius:50%;background:rgba(170,225,255,.95);pointer-events:none}
-  .zikr{position:absolute;pointer-events:none;color:#fff;font-weight:700;font-size:17px;white-space:nowrap;
-    text-shadow:0 0 12px rgba(120,200,255,.95),0 2px 6px rgba(0,0,0,.6);transform:translateX(-50%);animation:zikr 1.9s ease-out forwards}
+  .drop{position:absolute;width:9px;height:9px;border-radius:50%;pointer-events:none}
+  .zikr{position:absolute;pointer-events:none;color:#fff;font-weight:700;font-size:17px;white-space:nowrap;text-shadow:0 0 12px rgba(120,200,255,.95),0 2px 6px rgba(0,0,0,.6);transform:translateX(-50%);animation:zikr 1.9s ease-out forwards}
   @keyframes zikr{0%{opacity:0;margin-top:0;scale:.6}15%{opacity:1;scale:1.1}100%{opacity:0;margin-top:-90px;scale:1}}
   #bar{position:fixed;top:12px;left:0;right:0;display:flex;justify-content:center;gap:10px;z-index:5;pointer-events:none}
   .pill{background:rgba(0,0,0,.45);color:#fff;border-radius:999px;padding:6px 16px;font-size:15px;backdrop-filter:blur(4px)}
-  #note{position:fixed;bottom:10px;left:0;right:0;text-align:center;color:#9aa;font-size:12px}
+  #status{display:none;position:fixed;top:56px;left:0;right:0;text-align:center;color:#cfe;font-size:12px;z-index:5;pointer-events:none;opacity:.8}
 </style>
 </head>
 <body>
-<div id="bg"><div class="aurora a1"></div><div class="aurora a2"></div><div class="aurora a3"></div><div class="moon"></div></div>
+<div id="bg">
+  <div id="stars"></div>
+  <div class="crescent"></div>
+  <div class="glow"></div>
+  <!-- فوانيس معلّقة -->
+  <div class="lamp" style="left:6%;height:21vh;animation-duration:5.2s">
+    <svg viewBox="0 0 60 150"><defs><radialGradient id="g1" cx="50%" cy="50%" r="60%"><stop offset="0" stop-color="#fff0b8"/><stop offset=".55" stop-color="#ffb347"/><stop offset="1" stop-color="#c46a14"/></radialGradient></defs>
+      <line x1="30" y1="0" x2="30" y2="46" stroke="#6b5a3a" stroke-width="1.5"/>
+      <path d="M18 48L42 48L35 38L25 38Z" fill="#2a1d0a"/><rect x="28" y="30" width="4" height="9" fill="#2a1d0a"/>
+      <g class="lt" style="filter:drop-shadow(0 0 14px rgba(255,190,90,.85))"><path d="M16 50Q9 78 18 106L42 106Q51 78 44 50Z" fill="url(#g1)"/>
+      <path d="M30 50V106M23 52Q19 78 24 106M37 52Q41 78 36 106" stroke="#3a2608" stroke-width="1.4" fill="none" opacity=".7"/></g>
+      <path d="M19 106L41 106L35 120L25 120Z" fill="#2a1d0a"/><circle cx="30" cy="125" r="3" fill="#2a1d0a"/></svg></div>
+  <div class="lamp" style="left:20%;height:14vh;animation-duration:6.4s;animation-delay:-2s">
+    <svg viewBox="0 0 60 150"><line x1="30" y1="0" x2="30" y2="46" stroke="#6b5a3a" stroke-width="1.5"/>
+      <path d="M18 48L42 48L35 38L25 38Z" fill="#2a1d0a"/><rect x="28" y="30" width="4" height="9" fill="#2a1d0a"/>
+      <g class="lt" style="filter:drop-shadow(0 0 12px rgba(255,190,90,.8))"><path d="M16 50Q9 78 18 106L42 106Q51 78 44 50Z" fill="url(#g1)"/>
+      <path d="M30 50V106M23 52Q19 78 24 106M37 52Q41 78 36 106" stroke="#3a2608" stroke-width="1.4" fill="none" opacity=".7"/></g>
+      <path d="M19 106L41 106L35 120L25 120Z" fill="#2a1d0a"/><circle cx="30" cy="125" r="3" fill="#2a1d0a"/></svg></div>
+  <div class="lamp" style="right:28%;height:17vh;animation-duration:4.8s;animation-delay:-1s">
+    <svg viewBox="0 0 60 150"><line x1="30" y1="0" x2="30" y2="46" stroke="#6b5a3a" stroke-width="1.5"/>
+      <path d="M18 48L42 48L35 38L25 38Z" fill="#2a1d0a"/><rect x="28" y="30" width="4" height="9" fill="#2a1d0a"/>
+      <g class="lt" style="filter:drop-shadow(0 0 13px rgba(255,190,90,.85))"><path d="M16 50Q9 78 18 106L42 106Q51 78 44 50Z" fill="url(#g1)"/>
+      <path d="M30 50V106M23 52Q19 78 24 106M37 52Q41 78 36 106" stroke="#3a2608" stroke-width="1.4" fill="none" opacity=".7"/></g>
+      <path d="M19 106L41 106L35 120L25 120Z" fill="#2a1d0a"/><circle cx="30" cy="125" r="3" fill="#2a1d0a"/></svg></div>
+  <!-- المسجد -->
+  <svg class="mosque" viewBox="0 0 1000 220" preserveAspectRatio="xMidYMax slice">
+    <g fill="#04040e"><rect x="0" y="190" width="1000" height="30"/><path d="M380 190V150Q500 40 620 150V190Z"/><rect x="496" y="36" width="8" height="24"/><path d="M300 190V168Q340 112 380 168V190Z"/><path d="M620 190V168Q660 112 700 168V190Z"/><rect x="200" y="74" width="18" height="116"/><path d="M196 74L209 32L222 74Z"/><rect x="192" y="104" width="34" height="6"/><rect x="782" y="74" width="18" height="116"/><path d="M778 74L791 32L804 74Z"/><rect x="774" y="104" width="34" height="6"/><rect x="92" y="132" width="14" height="58"/><path d="M89 132L99 102L109 132Z"/><rect x="896" y="132" width="14" height="58"/><path d="M893 132L903 102L913 132Z"/></g>
+    <g>
+      <path class="win" d="M410 188V168Q415 160 420 168V188Z"/><path class="win" d="M434 188V168Q439 160 444 168V188Z"/><path class="win" d="M458 188V168Q463 160 468 168V188Z"/>
+      <path class="win" d="M532 188V168Q537 160 542 168V188Z"/><path class="win" d="M556 188V168Q561 160 566 168V188Z"/><path class="win" d="M580 188V168Q585 160 590 168V188Z"/>
+      <path class="win" d="M486 188V170Q500 150 514 170V188Z" style="opacity:.9"/>
+      <rect class="win" x="206" y="130" width="6" height="16" rx="3"/><rect class="win" x="788" y="130" width="6" height="16" rx="3"/>
+      <path class="win" d="M322 188V176Q330 168 338 176V188Z"/><path class="win" d="M662 188V176Q670 168 678 176V188Z"/>
+    </g>
+  </svg>
+</div>
 <div id="sky"></div>
-<div id="bar"><div class="pill">🫧 انفجر: <b id="n">0</b></div><div class="pill">اضغط الفقاعة</div></div>
-<div id="status" style="position:fixed;top:56px;left:0;right:0;text-align:center;color:#cfe;font-size:13px;z-index:5;pointer-events:none"></div>
-<div id="note">نموذج تجريبي فقط - الشكل النهائي داخل ديسكورد نفس هذا</div>
+<div id="bar"><div class="pill">🫧 انفجر: <b id="n">0</b></div></div>
+<div id="status"></div>
 <script>
 const ADHKAR=["أستغفر الله","لا إله إلا الله","اللهم صلِّ على محمد","سبحان الله","الحمد لله","الله أكبر","سبحان الله وبحمده","لا حول ولا قوة إلا بالله","ربِّ اغفر لي","بسم الله"];
-const COLORS=[[0,0],[205,95],[140,70],[48,95],[330,80],[275,75],[18,95],[175,75]]; // أبيض، أزرق، أخضر، أصفر، وردي، بنفسجي، برتقالي، تركوازي
-const sky=document.getElementById('sky'),nEl=document.getElementById('n');let count=0;
-function spawn(){
-  const size=48+Math.random()*52,b=document.createElement('div');
-  b.className='bubble';b.style.width=b.style.height=size+'px';
-  const c=COLORS[Math.floor(Math.random()*COLORS.length)];
-  b.style.setProperty('--h',c[0]);b.style.setProperty('--s',c[1]+'%');b.dataset.hue=c[0];b.dataset.sat=c[1];
-  b.style.left=(5+Math.random()*90)+'%';
-  const fall=7+Math.random()*7;
-  b.style.animationDuration=fall+'s,'+(2+Math.random()*2.5)+'s';
-  b.addEventListener('pointerdown',e=>{e.preventDefault();pop(b)});
-  b.addEventListener('animationend',e=>{if(e.animationName==='fall')b.remove()});
-  sky.appendChild(b);
-}
-function pop(b){
-  const r=b.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
-  b.remove();count++;nEl.textContent=count;
-  const col=`hsl(${b.dataset.hue},${Math.max(b.dataset.sat,25)}%,75%)`;
-  const ring=document.createElement('div');ring.className='ring';
-  ring.style.cssText+=`left:${x}px;top:${y}px;width:${r.width}px;height:${r.height}px;border-color:${col}`;sky.appendChild(ring);
-  setTimeout(()=>ring.remove(),600);
-  for(let i=0;i<12;i++){
-    const d=document.createElement('div');d.className='drop';d.style.left=x+'px';d.style.top=y+'px';d.style.background=col;sky.appendChild(d);
-    const a=Math.PI*2*i/12,dist=40+Math.random()*50;
-    d.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:`translate(${Math.cos(a)*dist}px,${Math.sin(a)*dist}px) scale(.2)`,opacity:0}],{duration:520,easing:'ease-out'}).onfinish=()=>d.remove();
-  }
-  const z=document.createElement('div');z.className='zikr';z.textContent=ADHKAR[Math.floor(Math.random()*ADHKAR.length)];
-  z.style.textShadow=`0 0 12px ${col},0 2px 6px rgba(0,0,0,.6)`;
-  z.style.left=Math.min(Math.max(x,110),innerWidth-110)+'px';z.style.top=y+'px';sky.appendChild(z);
-  setTimeout(()=>z.remove(),1950);
-}
-const bg=document.getElementById('bg');
-for(let i=0;i<90;i++){
-  const s=document.createElement('div'),sz=1+Math.random()*2.2;
-  s.className='star';s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-duration:${1.5+Math.random()*3}s;animation-delay:${-Math.random()*4}s`;
-  bg.appendChild(s);
-}
-function shoot(){
-  const s=document.createElement('div');s.className='shoot';
-  s.style.left=(40+Math.random()*55)+'%';s.style.top=(Math.random()*40)+'%';bg.appendChild(s);
-  s.animate([{opacity:0,transform:'rotate(-25deg) translateX(0)'},{opacity:1,offset:.15},{opacity:0,transform:'rotate(-25deg) translateX(-420px)'}],{duration:1100,easing:'ease-in'}).onfinish=()=>s.remove();
-}
+const COLORS=[[0,0],[205,95],[140,70],[48,95],[330,80],[275,75],[18,95],[175,75]];
+const bg=document.getElementById('bg'),sky=document.getElementById('sky'),nEl=document.getElementById('n');let count=0;
+function rnd(a,b){return a+Math.random()*(b-a)}
+const stars=document.getElementById('stars');
+for(let i=0;i<110;i++){const s=document.createElement('div'),sz=rnd(1,3.2);s.className='star';s.style.cssText=`width:${sz}px;height:${sz}px;left:${rnd(0,100)}%;top:${rnd(0,70)}%;animation-duration:${rnd(1.5,4.5)}s;animation-delay:${-rnd(0,4)}s`;stars.appendChild(s)}
+function shoot(){const s=document.createElement('div');s.className='shoot';s.style.left=rnd(40,95)+'%';s.style.top=rnd(0,35)+'%';stars.appendChild(s);
+  s.animate([{opacity:0,transform:'rotate(-25deg) translateX(0)'},{opacity:1,offset:.15},{opacity:0,transform:'rotate(-25deg) translateX(-420px)'}],{duration:1100,easing:'ease-in'}).onfinish=()=>s.remove()}
 setInterval(shoot,3500);setTimeout(shoot,800);
-for(let i=0;i<6;i++)setTimeout(spawn,i*500);
-setInterval(spawn,900);
+function spawn(){
+  const size=48+Math.random()*52,b=document.createElement('div');b.className='bubble';b.style.width=b.style.height=size+'px';
+  const c=COLORS[Math.floor(Math.random()*COLORS.length)];b.style.setProperty('--h',c[0]);b.style.setProperty('--s',c[1]+'%');b.dataset.hue=c[0];b.dataset.sat=c[1];
+  b.style.left=(5+Math.random()*90)+'%';b.style.animationDuration=(7+Math.random()*7)+'s,'+(2+Math.random()*2.5)+'s';
+  b.addEventListener('pointerdown',e=>{e.preventDefault();pop(b)});b.addEventListener('animationend',e=>{if(e.animationName==='fall')b.remove()});sky.appendChild(b)}
+function pop(b){
+  const r=b.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;b.remove();count++;nEl.textContent=count;
+  const col=`hsl(${b.dataset.hue},${Math.max(b.dataset.sat,25)}%,75%)`;
+  const ring=document.createElement('div');ring.className='ring';ring.style.cssText+=`left:${x}px;top:${y}px;width:${r.width}px;height:${r.height}px;border-color:${col}`;sky.appendChild(ring);setTimeout(()=>ring.remove(),600);
+  for(let i=0;i<12;i++){const d=document.createElement('div');d.className='drop';d.style.left=x+'px';d.style.top=y+'px';d.style.background=col;sky.appendChild(d);
+    const a=Math.PI*2*i/12,dist=40+Math.random()*50;d.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:`translate(${Math.cos(a)*dist}px,${Math.sin(a)*dist}px) scale(.2)`,opacity:0}],{duration:520,easing:'ease-out'}).onfinish=()=>d.remove()}
+  const z=document.createElement('div');z.className='zikr';z.textContent=ADHKAR[Math.floor(Math.random()*ADHKAR.length)];z.style.textShadow=`0 0 12px ${col},0 2px 6px rgba(0,0,0,.6)`;
+  z.style.left=Math.min(Math.max(x,110),innerWidth-110)+'px';z.style.top=y+'px';sky.appendChild(z);setTimeout(()=>z.remove(),1950)}
+for(let i=0;i<6;i++)setTimeout(spawn,i*500);setInterval(spawn,900);
 </script>
 <script src="app.js"></script>
 </body>
