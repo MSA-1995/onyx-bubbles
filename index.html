@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>فقاعات الأذكار - نموذج تجريبي</title>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#1e1f22;font-family:"Segoe UI",Tahoma,sans-serif;user-select:none}
+  #bg{position:fixed;inset:0;overflow:hidden;background:linear-gradient(180deg,#05081a 0%,#0a0e2a 55%,#100a22 100%)}
+  .aurora{position:absolute;width:70vmax;height:40vmax;border-radius:50%;filter:blur(80px);opacity:.16}
+  .a1{background:#00e0b0;left:-20%;top:-10%;animation:drift1 16s ease-in-out infinite alternate}
+  .a2{background:#7a4dff;right:-25%;top:5%;animation:drift2 20s ease-in-out infinite alternate}
+  .a3{background:#ff4da6;left:15%;top:35%;opacity:.09;animation:drift3 24s ease-in-out infinite alternate}
+  @keyframes drift1{to{transform:translate(35vw,12vh) rotate(25deg) scale(1.2)}}
+  @keyframes drift2{to{transform:translate(-40vw,18vh) rotate(-20deg) scale(.9)}}
+  @keyframes drift3{to{transform:translate(30vw,-15vh) rotate(15deg) scale(1.3)}}
+  .star{position:absolute;border-radius:50%;background:#fff;animation:tw ease-in-out infinite alternate}
+  @keyframes tw{from{opacity:.08;transform:scale(.7)}to{opacity:.6;transform:scale(1.2)}}
+  .shoot{position:absolute;height:2px;width:140px;background:linear-gradient(90deg,rgba(255,255,255,0),#fff);border-radius:2px;transform:rotate(-25deg);opacity:0}
+  .moon{position:absolute;top:9%;right:9%;width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#d8d3b8,#b8b08a 60%,#8f8862);opacity:.8;
+    box-shadow:0 0 18px 4px rgba(255,240,170,.12);animation:moon 6s ease-in-out infinite alternate}
+  @keyframes moon{to{box-shadow:0 0 28px 8px rgba(255,240,170,.2)}}
+  #sky{position:fixed;inset:0}
+  .bubble{position:absolute;top:-90px;border-radius:50%;cursor:pointer;
+    background:radial-gradient(circle at 30% 28%,rgba(255,255,255,.85) 0 6%,rgba(255,255,255,.18) 14%,hsla(var(--h),var(--s),70%,.28) 55%,hsla(var(--h),var(--s),58%,.5) 100%);
+    border:1.5px solid rgba(255,255,255,.55);box-shadow:inset 0 0 14px rgba(255,255,255,.35),0 0 18px hsla(var(--h),var(--s),65%,.4);
+    animation:fall linear forwards, sway ease-in-out infinite alternate}
+  @keyframes fall{to{top:calc(100% + 120px)}}
+  @keyframes sway{from{margin-left:-18px}to{margin-left:18px}}
+  .bubble:hover{filter:brightness(1.25)}
+  .ring{position:absolute;border-radius:50%;border:3px solid rgba(160,220,255,.9);pointer-events:none;animation:ring .55s ease-out forwards}
+  @keyframes ring{from{transform:translate(-50%,-50%) scale(.3);opacity:1}to{transform:translate(-50%,-50%) scale(2.2);opacity:0}}
+  .drop{position:absolute;width:9px;height:9px;border-radius:50%;background:rgba(170,225,255,.95);pointer-events:none}
+  .zikr{position:absolute;pointer-events:none;color:#fff;font-weight:700;font-size:17px;white-space:nowrap;
+    text-shadow:0 0 12px rgba(120,200,255,.95),0 2px 6px rgba(0,0,0,.6);transform:translateX(-50%);animation:zikr 1.9s ease-out forwards}
+  @keyframes zikr{0%{opacity:0;margin-top:0;scale:.6}15%{opacity:1;scale:1.1}100%{opacity:0;margin-top:-90px;scale:1}}
+  #bar{position:fixed;top:12px;left:0;right:0;display:flex;justify-content:center;gap:10px;z-index:5;pointer-events:none}
+  .pill{background:rgba(0,0,0,.45);color:#fff;border-radius:999px;padding:6px 16px;font-size:15px;backdrop-filter:blur(4px)}
+  #note{position:fixed;bottom:10px;left:0;right:0;text-align:center;color:#9aa;font-size:12px}
+</style>
+</head>
+<body>
+<div id="bg"><div class="aurora a1"></div><div class="aurora a2"></div><div class="aurora a3"></div><div class="moon"></div></div>
+<div id="sky"></div>
+<div id="bar"><div class="pill">🫧 انفجر: <b id="n">0</b></div><div class="pill">اضغط الفقاعة</div></div>
+<div id="status" style="position:fixed;top:56px;left:0;right:0;text-align:center;color:#cfe;font-size:13px;z-index:5;pointer-events:none"></div>
+<div id="note">نموذج تجريبي فقط - الشكل النهائي داخل ديسكورد نفس هذا</div>
+<script>
+const ADHKAR=["أستغفر الله","لا إله إلا الله","اللهم صلِّ على محمد","سبحان الله","الحمد لله","الله أكبر","سبحان الله وبحمده","لا حول ولا قوة إلا بالله"];
+const COLORS=[[0,0],[205,95],[140,70],[48,95],[330,80],[275,75],[18,95],[175,75]]; // أبيض، أزرق، أخضر، أصفر، وردي، بنفسجي، برتقالي، تركوازي
+const sky=document.getElementById('sky'),nEl=document.getElementById('n');let count=0;
+function spawn(){
+  const size=48+Math.random()*52,b=document.createElement('div');
+  b.className='bubble';b.style.width=b.style.height=size+'px';
+  const c=COLORS[Math.floor(Math.random()*COLORS.length)];
+  b.style.setProperty('--h',c[0]);b.style.setProperty('--s',c[1]+'%');b.dataset.hue=c[0];b.dataset.sat=c[1];
+  b.style.left=(5+Math.random()*90)+'%';
+  const fall=7+Math.random()*7;
+  b.style.animationDuration=fall+'s,'+(2+Math.random()*2.5)+'s';
+  b.addEventListener('pointerdown',e=>{e.preventDefault();pop(b)});
+  b.addEventListener('animationend',e=>{if(e.animationName==='fall')b.remove()});
+  sky.appendChild(b);
+}
+function pop(b){
+  const r=b.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2;
+  b.remove();count++;nEl.textContent=count;
+  const col=`hsl(${b.dataset.hue},${Math.max(b.dataset.sat,25)}%,75%)`;
+  const ring=document.createElement('div');ring.className='ring';
+  ring.style.cssText+=`left:${x}px;top:${y}px;width:${r.width}px;height:${r.height}px;border-color:${col}`;sky.appendChild(ring);
+  setTimeout(()=>ring.remove(),600);
+  for(let i=0;i<12;i++){
+    const d=document.createElement('div');d.className='drop';d.style.left=x+'px';d.style.top=y+'px';d.style.background=col;sky.appendChild(d);
+    const a=Math.PI*2*i/12,dist=40+Math.random()*50;
+    d.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:`translate(${Math.cos(a)*dist}px,${Math.sin(a)*dist}px) scale(.2)`,opacity:0}],{duration:520,easing:'ease-out'}).onfinish=()=>d.remove();
+  }
+  const z=document.createElement('div');z.className='zikr';z.textContent=ADHKAR[Math.floor(Math.random()*ADHKAR.length)];
+  z.style.textShadow=`0 0 12px ${col},0 2px 6px rgba(0,0,0,.6)`;
+  z.style.left=Math.min(Math.max(x,110),innerWidth-110)+'px';z.style.top=y+'px';sky.appendChild(z);
+  setTimeout(()=>z.remove(),1950);
+}
+const bg=document.getElementById('bg');
+for(let i=0;i<90;i++){
+  const s=document.createElement('div'),sz=1+Math.random()*2.2;
+  s.className='star';s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-duration:${1.5+Math.random()*3}s;animation-delay:${-Math.random()*4}s`;
+  bg.appendChild(s);
+}
+function shoot(){
+  const s=document.createElement('div');s.className='shoot';
+  s.style.left=(40+Math.random()*55)+'%';s.style.top=(Math.random()*40)+'%';bg.appendChild(s);
+  s.animate([{opacity:0,transform:'rotate(-25deg) translateX(0)'},{opacity:1,offset:.15},{opacity:0,transform:'rotate(-25deg) translateX(-420px)'}],{duration:1100,easing:'ease-in'}).onfinish=()=>s.remove();
+}
+setInterval(shoot,3500);setTimeout(shoot,800);
+for(let i=0;i<6;i++)setTimeout(spawn,i*500);
+setInterval(spawn,900);
+</script>
+<script src="app.js"></script>
+</body>
+</html>
+
