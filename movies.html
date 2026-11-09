@@ -7,24 +7,36 @@
 <style>
   html,body{margin:0;height:100%;background:#0b0d17;color:#fff;font-family:"Segoe UI",Tahoma,sans-serif}
   #wrap{display:flex;flex-direction:column;height:100%;padding:12px;box-sizing:border-box;gap:8px}
-  #title{font-size:18px;font-weight:700;text-align:center}
+  #title{font-size:18px;font-weight:700;text-align:center;min-height:24px}
+  #form{display:flex;gap:8px}
+  #q{flex:1;min-width:0;background:#171b30;color:#fff;border:1px solid #2b3050;border-radius:8px;padding:8px 12px;font-size:14px;direction:ltr;text-align:left}
+  #form button{background:#5865f2;color:#fff;border:0;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:14px}
   #player{flex:1;min-height:0;width:100%;background:#000;border-radius:10px}
-  #log{font-size:12px;line-height:1.6;max-height:22vh;overflow:auto;direction:ltr;text-align:left;opacity:.9}
-  .ok{color:#6fdc8c}.bad{color:#ff7a7a}
-  #sources button{background:#2b3050;color:#fff;border:0;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px}
-  #sources button:hover{background:#3a4170}
+  #status{font-size:13px;text-align:center;min-height:18px;opacity:.9}
+  .bad{color:#ff7a7a}
+  #results{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-height:22vh;overflow:auto}
+  #results button{background:#2b3050;color:#fff;border:0;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;direction:ltr}
+  #results button:hover{background:#3a4170}
   #foot{font-size:11px;text-align:center;opacity:.6}
+  #toggle{display:none;align-self:center;background:#2b3050;color:#fff;border:0;border-radius:8px;padding:4px 14px;cursor:pointer;font-size:12px}
+  #wrap.playing{padding:6px;gap:4px}
+  #wrap.playing #toggle{display:block}
+  #wrap.playing #form,#wrap.playing #results,#wrap.playing #status,#wrap.playing #foot{display:none}
+  #wrap.playing.search #form,#wrap.playing.search #results,#wrap.playing.search #status{display:flex}
+  #wrap.playing.search #status{display:block}
+  #wrap.playing.search #player{flex:.5}
 </style>
 </head>
 <body>
 <div id="wrap">
-  <div id="title"></div>
-  <a href="index.html" onclick="this.href='index.html'+location.search" style="color:#9cf;font-size:12px;text-align:center;text-decoration:none">رجوع للفقاعات</a>
+  <div id="title">الأفلام</div>
+  <button id="toggle" type="button">بحث / إخفاء البحث</button>
+  <form id="form"><input id="q" placeholder="اكتب اسم الفيلم بالإنجليزية" autocomplete="off"><button type="submit">بحث</button></form>
+  <div id="status"></div>
+  <div id="results"></div>
   <video id="player" controls playsinline preload="metadata"></video>
-  <div id="sources" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"></div>
-  <div id="log"></div>
   <div id="foot">الأفلام من archive.org (ملكية عامة) • Onyx</div>
 </div>
-<script src="movies_app.js?v=4"></script>
+<script src="movies_app.js?v=6"></script>
 </body>
 </html>
