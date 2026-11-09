@@ -62,10 +62,22 @@ async function translate(query) {
 
 // «الفيلم المُشارَك» لكل جلسة نشاط: من يضغط «مشاركة» يسجّل فيلمه، ومن ينضم لنفس الجلسة يفتحه تلقائياً.
 // في الذاكرة فقط مع مدة صلاحية؛ تُنسى عند إعادة تشغيل الخدمة (الحالة قصيرة العمر أصلاً).
-const SHARE_TTL_MS = 2 * 60 * 60 * 1000;
+const SHARE_TTL_MS = 10 * 1000;      // المشاركة تبقى 10 ثوانٍ فقط (دعوة سريعة لمن هو داخل الصفحة وقتها)
+const NOW_RATE_LIMIT = 60;           // الضيوف يسألون كل 3 ثوانٍ، فحدّ خاص أعلى من حدّ الترجمة
+const nowHits = new Map();
+
+function nowLimited(ip) {
+  const t = Date.now();
+  const list = (nowHits.get(ip) || []).filter((x) => t - x < RATE_WINDOW_MS);
+  list.push(t);
+  nowHits.set(ip, list);
+  if (nowHits.size > 5000) {
+    for (const [k, v] of nowHits) if (!v.some((x) => t - x < RATE_WINDOW_MS)) nowHits.delete(k);
+  }
+  return list.length > NOW_RATE_LIMIT;
+}
 const SHARE_MAX = 500;
 const shared = new Map();          // instanceId -> {movie, title, at}
-const seenMiss = new Set();        // جلسات سجّلنا لها «لا فيلم» (للسجل فقط)
 const INSTANCE_RE = /^[A-Za-z0-9_-]{6,80}$/;
 const MOVIE_RE = /^[A-Za-z0-9._-]{1,200}$/;
 
@@ -80,17 +92,12 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://x");
   if (url.pathname === "/health") return send(res, 200, { ok: true });
   if (req.method === "GET" && (url.pathname === "/now" || url.pathname === "/now/set")) {
-    if (limited(clientIp(req))) return send(res, 429, { error: "too many requests" });
+    if (nowLimited(clientIp(req))) return send(res, 429, { error: "too many requests" });
     const instance = url.searchParams.get("instance") || "";
     if (!INSTANCE_RE.test(instance)) return send(res, 400, { error: "bad instance" });
     if (url.pathname === "/now") {
       const entry = sharedFor(instance);
-      if (entry) console.log(`now hit  instance=${instance.slice(0, 8)} movie=${entry.movie}`);
-      else if (!seenMiss.has(instance)) {        // نسجّل أول سؤال بلا نتيجة لكل جلسة فقط حتى لا يكثر السجل
-        if (seenMiss.size > 2000) seenMiss.clear();
-        seenMiss.add(instance);
-        console.log(`now miss instance=${instance.slice(0, 8)}`);
-      }
+      if (entry) console.log(`now hit  room=${instance.slice(0, 12)} movie=${entry.movie}`);       // الأسئلة بلا نتيجة لا تُسجَّل (كثيرة)
       return send(res, 200, entry ? { movie: entry.movie, title: entry.title } : {});
     }
     const movie = url.searchParams.get("movie") || "";
@@ -98,7 +105,7 @@ const server = http.createServer(async (req, res) => {
     const title = String(url.searchParams.get("title") || "").replace(/\s+/g, " ").trim().slice(0, 120);
     if (!shared.has(instance) && shared.size >= SHARE_MAX) shared.delete(shared.keys().next().value);
     shared.set(instance, { movie, title, at: Date.now() });
-    console.log(`now set  instance=${instance.slice(0, 8)} movie=${movie}`);
+    console.log(`now set  room=${instance.slice(0, 12)} movie=${movie}`);
     return send(res, 200, { ok: true });
   }
   if (req.method !== "GET" || url.pathname !== "/translate") return send(res, 404, { error: "not found" });
