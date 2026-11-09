@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>أفلام</title>
+<style>
+  html,body{margin:0;height:100%;background:#0b0d17;color:#fff;font-family:"Segoe UI",Tahoma,sans-serif}
+  #wrap{display:flex;flex-direction:column;height:100%;padding:12px;box-sizing:border-box;gap:8px}
+  #title{font-size:18px;font-weight:700;text-align:center}
+  #player{flex:1;min-height:0;width:100%;background:#000;border-radius:10px}
+  #log{font-size:12px;line-height:1.6;max-height:22vh;overflow:auto;direction:ltr;text-align:left;opacity:.9}
+  .ok{color:#6fdc8c}.bad{color:#ff7a7a}
+  #foot{font-size:11px;text-align:center;opacity:.6}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="title"></div>
+  <a href="index.html" style="color:#9cf;font-size:12px;text-align:center;text-decoration:none">رجوع للفقاعات</a>
+  <video id="player" controls playsinline preload="metadata"></video>
+  <div id="log"></div>
+  <div id="foot">الأفلام من archive.org (ملكية عامة) • Onyx</div>
+</div>
+<script src="movies_app.js"></script>
+</body>
+</html>
