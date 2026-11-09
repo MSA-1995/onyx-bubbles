@@ -19,12 +19,10 @@ const shareBtn = $("share");
 let sdk = null;
 // تشخيص: سطر صغير أسفل الصفحة + سجل الكونسول (رقم الجلسة مختصر)
 function dbgLog(msg) {
-  console.log("[movies]", msg);
-  const el = $("dbg");
-  if (el) el.textContent = `${VERSION} • client=${CLIENT} • ${msg}`;
+  console.log(`[movies ${VERSION} ${CLIENT}]`, msg);        // الكونسول فقط؛ لا يظهر شيء في الصفحة
 }
 // مفتاح الروم: نربط المشاركة برقم الروم (لا يتغير بين الحسابين) وليس برقم الجلسة (يختلف إذا تعددت الجلسات)
-const VERSION = "v18";
+const VERSION = "v19";
 const CLIENT = Math.random().toString(36).slice(2, 10);       // رقم عشوائي لكل تحميل للصفحة: يظهر في سجل الخدمة لتمييز الحسابين
 let pollNo = 0;
 const roomKey = () => (sdk ? `ch-${sdk.guildId || "g"}-${sdk.channelId || "c"}`.replace(/[^A-Za-z0-9_-]/g, "") : "");
@@ -97,25 +95,36 @@ function describe(files) {
   const best = pickFiles(files)[0];
   if (!best) return null;
   const secs = parseFloat(best.length);
-  return { height: Number(best.height) || 0, minutes: Number.isFinite(secs) ? Math.round(secs / 60) : 0 };
+  return {
+    height: Number(best.height) || 0,
+    minutes: Number.isFinite(secs) ? Math.round(secs / 60) : 0,
+    mb: Math.round(Number(best.size) / 1048576),
+  };
 }
 
-async function enrich(doc, btn, label) {
+const MIN_MINUTES = 40;          // أقل مدة نعدّها فيلماً كاملاً؛ ما دونها (لقطات ومقاطع) لا يظهر أبداً
+const MIN_MB = 200;              // إن لم تُعرف المدة: ملف أصغر من هذا يُعدّ مقطعاً قصيراً
+
+// نستبعد ما قد يكون مرفوعاً بدون حق: وسوم نسخ القرصنة في العنوان، أو أي فيلم سنته 1964 فأحدث
+// (أفلام ما قبل 1964 غالباً ملكية عامة لعدم تجديد حقوقها؛ ما بعدها محميّ تلقائياً). نتحفظ ولا نخاطر.
+const PIRACY_TAGS = /\b(yts|yify|rarbg|webrip|web-dl|webdl|bluray|blu-ray|blu ray|remux|brrip|bdrip|hdrip|dvdrip|hdtv|camrip|hdcam|x264|x265|hevc|10bit)\b/i;
+function isAllowed(doc) {
+  const title = String(doc.title || "");
+  if (PIRACY_TAGS.test(title)) return false;
+  const years = [Number(doc.year), ...(title.match(/\b(?:19|20)\d{2}\b/g) || []).map(Number)].filter((y) => y > 1800);
+  return !years.some((y) => y >= 1964);
+}
+
+// دقة ومدة النتيجة من بيانات archive.org؛ null = لا توجد نسخة تُشغَّل أو تعذّر الجلب
+async function fetchInfo(doc) {
   try {
     const r = await fetch(`${base}/metadata/${encodeURIComponent(doc.identifier)}`);
-    if (!r.ok) return;
+    if (!r.ok) return null;
     const meta = await r.json();
-    const info = describe(meta.files);
-    if (!info) {
-      btn.textContent = `${label} • لا يُشغَّل`;
-      btn.classList.add("dim");
-      return;
-    }
-    const parts = [];
-    if (info.height) parts.push(`${Math.min(info.height, 1080)}p`);
-    if (info.minutes) parts.push(`${info.minutes} د`);
-    if (parts.length) btn.textContent = `${label} • ${parts.join(" • ")}`;
-  } catch (e) { /* نترك الاسم بدون تفاصيل */ }
+    return describe(meta.files);
+  } catch (e) {
+    return null;
+  }
 }
 
 let candidates = [];
@@ -155,20 +164,37 @@ async function play(item) {
   }
 }
 
-function showResults(docs) {
+async function showResults(docs) {
   results.textContent = "";
   if (!docs.length) {
     setStatus("لا توجد نتائج. جرّب الاسم بالإنجليزية.", "bad");
     return;
   }
-  setStatus(`${docs.length} نتيجة. اختر فيلماً:`);
-  for (const d of docs) {
+  docs = docs.filter(isAllowed);
+  if (!docs.length) {
+    setStatus("لا توجد أفلام كاملة بهذا الاسم. جرّب اسماً آخر.", "bad");
+    return;
+  }
+  setStatus("أتحقق من مدة الأفلام...");
+  const infos = await Promise.all(docs.map(fetchInfo));
+  // نُبقي الأفلام الكاملة القابلة للتشغيل فقط: مدتها ≥ 40 دقيقة، أو (إن لم تُعرف المدة) حجم ملفها ≥ 200 ميجابايت
+  const items = docs
+    .map((d, i) => ({ d, info: infos[i] }))
+    .filter((x) => x.info && (x.info.minutes >= MIN_MINUTES || (x.info.minutes === 0 && x.info.mb >= MIN_MB)))
+    .sort((a, b) => Math.min(b.info.height, 1080) - Math.min(a.info.height, 1080) || b.info.minutes - a.info.minutes);
+  if (!items.length) {
+    setStatus("لا توجد أفلام كاملة بهذا الاسم. جرّب اسماً آخر.", "bad");
+    return;
+  }
+  setStatus(`${items.length} فيلم كامل. اختر فيلماً:`);
+  for (const { d, info } of items) {
     const b = document.createElement("button");
-    const label = `${d.title || d.identifier}${d.year ? " (" + d.year + ")" : ""}`;
-    b.textContent = label;
+    const parts = [];
+    if (info.height) parts.push(`${Math.min(info.height, 1080)}p`);
+    if (info.minutes) parts.push(`${info.minutes} د`);
+    b.textContent = `${d.title || d.identifier}${d.year ? " (" + d.year + ")" : ""}${parts.length ? " • " + parts.join(" • ") : ""}`;
     b.onclick = () => play(d);
     results.appendChild(b);
-    enrich(d, b, label);          // الدقة والمدة تظهر بعد لحظات بجانب الاسم
   }
 }
 
@@ -179,7 +205,7 @@ form.addEventListener("submit", async (e) => {
   setStatus("جاري البحث...");
   results.textContent = "";
   try {
-    showResults(await search(term));
+    await showResults(await search(term));
   } catch (err) {
     setStatus(`تعذّر البحث: ${err && err.message ? err.message : err}`, "bad");
   }
