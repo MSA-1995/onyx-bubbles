@@ -194,7 +194,7 @@ function showManualLink(reason) {
   shareLinkInput.value = link;
   shareBox.hidden = false;
   wrap.classList.add("search");
-  setStatus(reason ? `${reason} — انسخ الرابط وأرسله في الروم:` : "انسخ الرابط وأرسله في الروم:", reason ? "bad" : "");
+  setStatus(`انسخ الرابط وأرسله في الروم. (${reason || "—"})`, "");
   shareLinkInput.focus();
   shareLinkInput.select();
   try { navigator.clipboard.writeText(link); } catch (e) { /* قد يُمنع داخل الإطار */ }
@@ -202,15 +202,17 @@ function showManualLink(reason) {
 
 shareBtn.addEventListener("click", async () => {
   if (!sdk || !currentItem) return;
+  let note = "";
   try {
     const res = await sdk.commands.shareLink({
       message: `شاهد معي: ${currentItem.title}`,
       custom_id: `movie:${currentItem.identifier}`,
     });
-    if (!res || res.success !== true) showManualLink("لم تفتح نافذة المشاركة");
+    note = `رد ديسكورد: ${JSON.stringify(res)}`;
   } catch (e) {
-    showManualLink(`تعذّرت المشاركة (${e && e.message ? e.message : e})`);
+    note = `رد ديسكورد (خطأ): ${e && e.message ? e.message : e}`;
   }
+  showManualLink(note);          // الرابط يظهر دائماً كبديل مضمون، مع رد ديسكورد للتشخيص
 });
 
 (async function main() {
