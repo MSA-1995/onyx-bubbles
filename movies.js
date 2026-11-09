@@ -15,6 +15,8 @@ const form = $("form");
 const input = $("q");
 const statusEl = $("status");
 const wrap = $("wrap");
+const shareBtn = $("share");
+let sdk = null;
 $("toggle").addEventListener("click", () => wrap.classList.toggle("search"));
 
 function setStatus(text, cls) {
@@ -128,12 +130,14 @@ async function play(item) {
       setStatus("لا توجد نسخة MP4 قابلة للتشغيل لهذا الفيلم. جرّب غيره.", "bad");
       return;
     }
+    if (!item.title) item = { ...item, title: (meta.metadata && meta.metadata.title) || item.identifier };   // فتح من رابط مشاركة: لا يوجد عنوان بعد
     currentItem = item;
     candidateIndex = 0;
     loadCandidate();
     setStatus("");
     wrap.classList.add("playing");          // الفيديو يأخذ أكبر مساحة: نخفي البحث
     wrap.classList.remove("search");
+    if (sdk) shareBtn.hidden = false;
   } catch (e) {
     setStatus(`تعذّر التشغيل: ${e && e.message ? e.message : e}`, "bad");
   }
@@ -180,12 +184,33 @@ video.addEventListener("error", () => {
   setStatus(`خطأ في المشغّل (code ${video.error ? video.error.code : "?"})`, "bad");
 });
 
+// مشاركة الفيلم الحالي: ديسكورد يفتح نافذة اختيار الروم ويرسل رابطاً باسمك؛ من يضغطه يفتح نفس الفيلم داخل ديسكورد
+shareBtn.addEventListener("click", async () => {
+  if (!sdk || !currentItem) return;
+  try {
+    await sdk.commands.shareLink({
+      message: `شاهد معي: ${currentItem.title}`,
+      custom_id: `movie:${currentItem.identifier}`,
+    });
+  } catch (e) {
+    setStatus(`تعذّرت المشاركة: ${e && e.message ? e.message : e}`, "bad");
+    wrap.classList.add("search");
+  }
+});
+
 (async function main() {
   if (IN_DISCORD && PARAMS.get("frame_id")) {
     try {
-      const sdk = new DiscordSDK(CLIENT_ID);
+      sdk = new DiscordSDK(CLIENT_ID);
       await sdk.ready();
-    } catch (e) { /* الـ SDK اختياري هنا */ }
+    } catch (e) { sdk = null; /* الـ SDK اختياري: بدونه لا يظهر زر المشاركة */ }
+  }
+  // فُتحت من رابط مشاركة: custom_id=movie:<معرّف archive.org> فنشغّل الفيلم مباشرة
+  const customId = PARAMS.get("custom_id") || (sdk && sdk.customId) || "";
+  const shared = /^movie:([A-Za-z0-9._-]{1,200})$/.exec(customId);
+  if (shared) {
+    play({ identifier: shared[1] });
+    return;
   }
   setStatus("اكتب اسم الفيلم بالعربي أو الإنجليزي ثم اضغط بحث.");
 })();

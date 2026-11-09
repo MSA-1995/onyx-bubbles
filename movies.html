@@ -19,9 +19,9 @@
   #results button:hover{background:#3a4170}
   #results button.dim{opacity:.45}
   #foot{font-size:11px;text-align:center;opacity:.6}
-  #toggle{display:none;align-self:center;background:#2b3050;color:#fff;border:0;border-radius:8px;padding:4px 14px;cursor:pointer;font-size:12px}
+  #toggle,#share{display:none;align-self:center;background:#2b3050;color:#fff;border:0;border-radius:8px;padding:4px 14px;cursor:pointer;font-size:12px}
   #wrap.playing{padding:6px;gap:4px}
-  #wrap.playing #toggle{display:block}
+  #wrap.playing #toggle,#wrap.playing #share:not([hidden]){display:block}
   #wrap.playing #form,#wrap.playing #results,#wrap.playing #status,#wrap.playing #foot{display:none}
   #wrap.playing.search #form,#wrap.playing.search #results,#wrap.playing.search #status{display:flex}
   #wrap.playing.search #status{display:block}
@@ -31,13 +31,16 @@
 <body>
 <div id="wrap">
   <div id="title">الأفلام</div>
-  <button id="toggle" type="button">بحث / إخفاء البحث</button>
+  <div style="display:flex;gap:8px;justify-content:center">
+    <button id="toggle" type="button">بحث / إخفاء البحث</button>
+    <button id="share" type="button" hidden>مشاركة</button>
+  </div>
   <form id="form"><input id="q" placeholder="اكتب اسم الفيلم (عربي أو إنجليزي)" autocomplete="off"><button type="submit">بحث</button></form>
   <div id="status"></div>
   <div id="results"></div>
   <video id="player" controls playsinline preload="metadata"></video>
   <div id="foot">الأفلام من archive.org (ملكية عامة) • Onyx</div>
 </div>
-<script src="movies_app.js?v=9"></script>
+<script src="movies_app.js?v=10"></script>
 </body>
 </html>
