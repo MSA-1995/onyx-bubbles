@@ -78,6 +78,7 @@ function nowLimited(ip) {
 }
 const SHARE_MAX = 500;
 const shared = new Map();          // instanceId -> {movie, title, at}
+const pollCount = new Map();       // "room|client" -> عدد الأسئلة (للسجل التشخيصي فقط)
 const INSTANCE_RE = /^[A-Za-z0-9_-]{6,80}$/;
 const MOVIE_RE = /^[A-Za-z0-9._-]{1,200}$/;
 
@@ -97,7 +98,16 @@ const server = http.createServer(async (req, res) => {
     if (!INSTANCE_RE.test(instance)) return send(res, 400, { error: "bad instance" });
     if (url.pathname === "/now") {
       const entry = sharedFor(instance);
-      if (entry) console.log(`now hit  room=${instance.slice(0, 12)} movie=${entry.movie}`);       // الأسئلة بلا نتيجة لا تُسجَّل (كثيرة)
+      // تسجيل تشخيصي: كل عميل (رقم عشوائي من الصفحة) عند أول سؤال ثم كل 10 أسئلة، مع رقم الروم كاملاً ونسخة الصفحة
+      const client = String(url.searchParams.get("c") || "?").slice(0, 16).replace(/[^A-Za-z0-9]/g, "");
+      const ver = String(url.searchParams.get("v") || "?").slice(0, 8).replace(/[^A-Za-z0-9._-]/g, "");
+      const key = `${instance}|${client}`;
+      const n = (pollCount.get(key) || 0) + 1;
+      if (pollCount.size > 3000) pollCount.clear();
+      pollCount.set(key, n);
+      if (n === 1 || n % 10 === 0 || entry) {
+        console.log(`now poll  n=${n} room=${instance} client=${client} v=${ver} hit=${entry ? entry.movie : "no"}`);
+      }
       return send(res, 200, entry ? { movie: entry.movie, title: entry.title } : {});
     }
     const movie = url.searchParams.get("movie") || "";
@@ -105,7 +115,7 @@ const server = http.createServer(async (req, res) => {
     const title = String(url.searchParams.get("title") || "").replace(/\s+/g, " ").trim().slice(0, 120);
     if (!shared.has(instance) && shared.size >= SHARE_MAX) shared.delete(shared.keys().next().value);
     shared.set(instance, { movie, title, at: Date.now() });
-    console.log(`now set  room=${instance.slice(0, 12)} movie=${movie}`);
+    console.log(`now set   room=${instance} movie=${movie} client=${String(url.searchParams.get("c") || "?").slice(0, 16).replace(/[^A-Za-z0-9]/g, "")}`);
     return send(res, 200, { ok: true });
   }
   if (req.method !== "GET" || url.pathname !== "/translate") return send(res, 404, { error: "not found" });
