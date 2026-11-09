@@ -200,22 +200,34 @@ function showManualLink(reason) {
   try { navigator.clipboard.writeText(link); } catch (e) { /* قد يُمنع داخل الإطار */ }
 }
 
+// مشاركة الفيلم مع من في نفس جلسة النشاط: نسجّله عند خدمتنا (مرتبطاً برقم الجلسة)، ومن ينضم يفتحه تلقائياً
 shareBtn.addEventListener("click", async () => {
   if (!sdk || !currentItem) return;
-  showManualLink("أنتظر نافذة ديسكورد...");        // الرابط يظهر فوراً كبديل مضمون ولا ننتظر ديسكورد
+  showManualLink("");                               // الرابط يظهر فوراً (يفيد لو بدأت جلسة جديدة)
   try {
-    const res = await Promise.race([
-      sdk.commands.shareLink({
-        message: `شاهد معي: ${currentItem.title}`,
-        custom_id: `movie:${currentItem.identifier}`,
-      }),
-      new Promise((resolve) => setTimeout(() => resolve("لا رد من ديسكورد بعد 5 ثوانٍ"), 5000)),
-    ]);
-    setStatus(`انسخ الرابط وأرسله في الروم. (رد ديسكورد: ${typeof res === "string" ? res : JSON.stringify(res)})`);
+    const params = new URLSearchParams({ instance: sdk.instanceId, movie: currentItem.identifier, title: currentItem.title || "" });
+    const r = await fetch(`${API_BASE}/now/set?${params}`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    setStatus("تمت المشاركة: من ينضم لهذه الجلسة يفتح فيلمك تلقائيًا (لمدة ساعتين). ويمكنك أيضًا إرسال الرابط:");
   } catch (e) {
-    setStatus(`انسخ الرابط وأرسله في الروم. (خطأ ديسكورد: ${e && e.message ? e.message : e})`);
+    setStatus(`تعذّرت المشاركة (${e && e.message ? e.message : e}). يمكنك إرسال الرابط:`, "bad");
   }
 });
+
+// ننضم لجلسة فيها فيلم مُشارَك: نسأل الخدمة عند الفتح، ثم نعيد السؤال كل 10 ثوانٍ ما دمنا لم نشغّل شيئاً
+async function checkShared() {
+  if (!sdk || !API_BASE || currentItem) return false;
+  try {
+    const r = await fetch(`${API_BASE}/now?instance=${encodeURIComponent(sdk.instanceId)}`);
+    if (!r.ok) return false;
+    const data = await r.json();
+    if (data && data.movie && /^[A-Za-z0-9._-]{1,200}$/.test(data.movie)) {
+      play({ identifier: data.movie, title: data.title || "" });
+      return true;
+    }
+  } catch (e) { /* الخدمة نائمة أو غير متاحة: نكمل بدون مشاركة */ }
+  return false;
+}
 
 (async function main() {
   if (IN_DISCORD && PARAMS.get("frame_id")) {
@@ -232,4 +244,11 @@ shareBtn.addEventListener("click", async () => {
     return;
   }
   setStatus("اكتب اسم الفيلم بالعربي أو الإنجليزي ثم اضغط بحث.");
+  if (sdk && API_BASE) {
+    if (await checkShared()) return;
+    const timer = setInterval(async () => {
+      if (currentItem || (await checkShared())) clearInterval(timer);
+    }, 10000);
+    setTimeout(() => clearInterval(timer), 5 * 60 * 1000);       // نتوقف عن السؤال بعد 5 دقائق
+  }
 })();
