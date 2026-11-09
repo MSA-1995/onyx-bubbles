@@ -21,9 +21,11 @@ let sdk = null;
 function dbgLog(msg) {
   console.log("[movies]", msg);
   const el = $("dbg");
-  if (el) el.textContent = `v15 • ${msg}`;
+  if (el) el.textContent = `v16 • ${msg}`;
 }
-const sid = () => (sdk && sdk.instanceId ? String(sdk.instanceId).slice(0, 8) : "no-sdk");
+// مفتاح الروم: نربط المشاركة برقم الروم (لا يتغير بين الحسابين) وليس برقم الجلسة (يختلف إذا تعددت الجلسات)
+const roomKey = () => (sdk ? `ch-${sdk.guildId || "g"}-${sdk.channelId || "c"}`.replace(/[^A-Za-z0-9_-]/g, "") : "");
+const sid = () => (sdk ? roomKey().slice(-10) : "no-sdk");
 $("toggle").addEventListener("click", () => wrap.classList.toggle("search"));
 
 function setStatus(text, cls) {
@@ -212,22 +214,23 @@ shareBtn.addEventListener("click", async () => {
   if (!sdk || !currentItem) return;
   showManualLink("");                               // الرابط يظهر فوراً (يفيد لو بدأت جلسة جديدة)
   try {
-    const params = new URLSearchParams({ instance: sdk.instanceId, movie: currentItem.identifier, title: currentItem.title || "" });
+    const params = new URLSearchParams({ instance: roomKey(), movie: currentItem.identifier, title: currentItem.title || "" });
     const r = await fetch(`${API_BASE}/now/set?${params}`);
-    dbgLog(`share set session=${sid()} movie=${currentItem.identifier} http=${r.status}`);
+    dbgLog(`share set room=${sid()} movie=${currentItem.identifier} http=${r.status}`);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    setStatus("تمت المشاركة: من ينضم لهذه الجلسة يفتح فيلمك تلقائيًا (لمدة ساعتين). ويمكنك أيضًا إرسال الرابط:");
+    setStatus("تمت المشاركة لمدة 10 ثوانٍ: من يكون داخل صفحة الأفلام الآن يفتح فيلمك تلقائيًا. ويمكنك أيضًا إرسال الرابط:");
   } catch (e) {
     dbgLog(`share FAILED session=${sid()} ${e && e.message ? e.message : e}`);
     setStatus(`تعذّرت المشاركة (${e && e.message ? e.message : e}). يمكنك إرسال الرابط:`, "bad");
   }
 });
 
-// ننضم لجلسة فيها فيلم مُشارَك: نسأل الخدمة عند الفتح، ثم نعيد السؤال كل 10 ثوانٍ ما دمنا لم نشغّل شيئاً
+// نسأل الخدمة عند الفتح ثم كل 3 ثوانٍ ما دمنا لم نشغّل شيئاً (المشاركة تبقى 10 ثوانٍ فقط)
 async function checkShared() {
   if (!sdk || !API_BASE || currentItem) return false;
+  if (document.activeElement === input || input.value) return false;        // لا نقاطع من يكتب بحثاً
   try {
-    const r = await fetch(`${API_BASE}/now?instance=${encodeURIComponent(sdk.instanceId)}`);
+    const r = await fetch(`${API_BASE}/now?instance=${encodeURIComponent(roomKey())}`);
     if (!r.ok) { dbgLog(`check session=${sid()} http=${r.status}`); return false; }
     const data = await r.json();
     if (data && data.movie && /^[A-Za-z0-9._-]{1,200}$/.test(data.movie)) {
@@ -235,7 +238,6 @@ async function checkShared() {
       play({ identifier: data.movie, title: data.title || "" });
       return true;
     }
-    dbgLog(`check session=${sid()} none`);
   } catch (e) {
     dbgLog(`check session=${sid()} error ${e && e.message ? e.message : e}`);      /* الخدمة نائمة أو غير متاحة: نكمل بدون مشاركة */
   }
@@ -262,7 +264,7 @@ async function checkShared() {
     if (await checkShared()) return;
     const timer = setInterval(async () => {
       if (currentItem || (await checkShared())) clearInterval(timer);
-    }, 10000);
+    }, 3000);
     setTimeout(() => clearInterval(timer), 5 * 60 * 1000);       // نتوقف عن السؤال بعد 5 دقائق
   }
 })();
