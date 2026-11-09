@@ -24,7 +24,7 @@ function dbgLog(msg) {
   if (el) el.textContent = `${VERSION} • client=${CLIENT} • ${msg}`;
 }
 // مفتاح الروم: نربط المشاركة برقم الروم (لا يتغير بين الحسابين) وليس برقم الجلسة (يختلف إذا تعددت الجلسات)
-const VERSION = "v17";
+const VERSION = "v18";
 const CLIENT = Math.random().toString(36).slice(2, 10);       // رقم عشوائي لكل تحميل للصفحة: يظهر في سجل الخدمة لتمييز الحسابين
 let pollNo = 0;
 const roomKey = () => (sdk ? `ch-${sdk.guildId || "g"}-${sdk.channelId || "c"}`.replace(/[^A-Za-z0-9_-]/g, "") : "");
@@ -253,11 +253,12 @@ async function checkShared() {
 }
 
 (async function main() {
+  dbgLog(`boot frame=${!!PARAMS.get("frame_id")} inDiscord=${IN_DISCORD}`);       // أول سطر: يظهر قبل أي انتظار
   if (IN_DISCORD && PARAMS.get("frame_id")) {
     try {
-      sdk = new DiscordSDK(CLIENT_ID);
-      await sdk.ready();
-    } catch (e) { sdk = null; /* الـ SDK اختياري: بدونه لا يظهر زر المشاركة */ }
+      sdk = new DiscordSDK(CLIENT_ID);      // رقم الروم والسيرفر يأتيان من الرابط مباشرة، فلا ننتظر ready() (قد لا يردّ عند بعض الحسابات)
+      sdk.ready().then(() => dbgLog(`sdk ready room=${sid()}`), (e) => dbgLog(`sdk ready failed: ${e && e.message ? e.message : e}`));
+    } catch (e) { sdk = null; dbgLog(`sdk init failed: ${e && e.message ? e.message : e}`); /* بدونه لا يظهر زر المشاركة */ }
   }
   dbgLog(`start session=${sid()} inDiscord=${IN_DISCORD} frame=${!!PARAMS.get("frame_id")} api=${API_BASE || "none"}`);
   // فُتحت من رابط مشاركة: custom_id=movie:<معرّف archive.org> فنشغّل الفيلم مباشرة
