@@ -38,31 +38,21 @@ async function searchArchive(term, rows) {
   return (data.response && data.response.docs) || [];
 }
 
-// البحث العربي معطّل عمداً: يحتاج مفتاح TMDB، والصفحة عامة فلا نضع المفتاح فيها.
-// يُفعَّل لاحقاً عبر وسيط على البوت يحمل المفتاح (لا يُكتب هنا أبداً).
-const TMDB_KEY = "";
-const tmdbBase = IN_DISCORD ? "/.proxy/tmdb" : "https://api.themoviedb.org";
+// البحث العربي: خدمة صغيرة على كويب (مجلد server) تترجم الاسم عبر TMDB والمفتاح عندها فقط (متغير بيئة).
+// داخل ديسكورد تصلها عبر Mapping باسم /api؛ وللمعاينة المحلية نمرّر ?api= في الرابط.
+const API_BASE = IN_DISCORD ? "/.proxy/api" : (PARAMS.get("api") || "");
 const ARABIC = /[؀-ۿ]/;
 
 async function englishTitles(arabicTerm) {
-  const params = new URLSearchParams({ api_key: TMDB_KEY, query: arabicTerm, language: "en-US", include_adult: "false" });
-  const r = await fetch(`${tmdbBase}/3/search/movie?${params}`);
-  if (!r.ok) throw new Error(`TMDB HTTP ${r.status}`);
+  const r = await fetch(`${API_BASE}/translate?q=${encodeURIComponent(arabicTerm)}`);
+  if (!r.ok) throw new Error(r.status === 429 ? "طلبات كثيرة، انتظر قليلاً" : `خدمة الترجمة غير متاحة (${r.status})`);
   const data = await r.json();
-  const titles = [];
-  for (const m of data.results || []) {
-    for (const t of [m.title, m.original_title]) {
-      const clean = cleanTerm(t || "");
-      if (clean && /[A-Za-z]/.test(clean) && !titles.includes(clean)) titles.push(clean);
-    }
-    if (titles.length >= 6) break;
-  }
-  return titles.slice(0, 6);
+  return (data.titles || []).map(cleanTerm).filter(Boolean);
 }
 
 async function search(term) {
   if (!ARABIC.test(term)) return searchArchive(term, 20);
-  if (!TMDB_KEY) throw new Error("البحث بالعربي غير متاح حالياً، اكتب الاسم بالإنجليزية");
+  if (!API_BASE) throw new Error("البحث بالعربي غير متاح حالياً، اكتب الاسم بالإنجليزية");
   setStatus("أترجم الاسم...");
   const titles = await englishTitles(term);
   if (!titles.length) return [];
@@ -197,5 +187,5 @@ video.addEventListener("error", () => {
       await sdk.ready();
     } catch (e) { /* الـ SDK اختياري هنا */ }
   }
-  setStatus("اكتب اسم الفيلم بالإنجليزية ثم اضغط بحث.");
+  setStatus("اكتب اسم الفيلم بالعربي أو الإنجليزي ثم اضغط بحث.");
 })();
