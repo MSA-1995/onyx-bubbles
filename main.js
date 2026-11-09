@@ -18,7 +18,9 @@ async function main() {
   const sdk = new DiscordSDK(CLIENT_ID);
   await sdk.ready();
   // الـ Activity أُطلقت من روم الأفلام: نفتح صفحة الأفلام بدل الفقاعات
-  if (MOVIES_CHANNELS.includes(String(sdk.channelId))) {
+  const urlParams = new URLSearchParams(location.search);
+  const channelIds = [sdk.channelId, urlParams.get("channel_id"), urlParams.get("location_id")].map(String);
+  if (channelIds.some((id) => MOVIES_CHANNELS.includes(id))) {
     location.replace("movies.html" + location.search);
     return;
   }
