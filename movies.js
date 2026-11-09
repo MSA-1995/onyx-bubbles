@@ -17,6 +17,13 @@ const statusEl = $("status");
 const wrap = $("wrap");
 const shareBtn = $("share");
 let sdk = null;
+// تشخيص: سطر صغير أسفل الصفحة + سجل الكونسول (رقم الجلسة مختصر)
+function dbgLog(msg) {
+  console.log("[movies]", msg);
+  const el = $("dbg");
+  if (el) el.textContent = `v15 • ${msg}`;
+}
+const sid = () => (sdk && sdk.instanceId ? String(sdk.instanceId).slice(0, 8) : "no-sdk");
 $("toggle").addEventListener("click", () => wrap.classList.toggle("search"));
 
 function setStatus(text, cls) {
@@ -207,9 +214,11 @@ shareBtn.addEventListener("click", async () => {
   try {
     const params = new URLSearchParams({ instance: sdk.instanceId, movie: currentItem.identifier, title: currentItem.title || "" });
     const r = await fetch(`${API_BASE}/now/set?${params}`);
+    dbgLog(`share set session=${sid()} movie=${currentItem.identifier} http=${r.status}`);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     setStatus("تمت المشاركة: من ينضم لهذه الجلسة يفتح فيلمك تلقائيًا (لمدة ساعتين). ويمكنك أيضًا إرسال الرابط:");
   } catch (e) {
+    dbgLog(`share FAILED session=${sid()} ${e && e.message ? e.message : e}`);
     setStatus(`تعذّرت المشاركة (${e && e.message ? e.message : e}). يمكنك إرسال الرابط:`, "bad");
   }
 });
@@ -219,13 +228,17 @@ async function checkShared() {
   if (!sdk || !API_BASE || currentItem) return false;
   try {
     const r = await fetch(`${API_BASE}/now?instance=${encodeURIComponent(sdk.instanceId)}`);
-    if (!r.ok) return false;
+    if (!r.ok) { dbgLog(`check session=${sid()} http=${r.status}`); return false; }
     const data = await r.json();
     if (data && data.movie && /^[A-Za-z0-9._-]{1,200}$/.test(data.movie)) {
+      dbgLog(`check session=${sid()} FOUND ${data.movie}`);
       play({ identifier: data.movie, title: data.title || "" });
       return true;
     }
-  } catch (e) { /* الخدمة نائمة أو غير متاحة: نكمل بدون مشاركة */ }
+    dbgLog(`check session=${sid()} none`);
+  } catch (e) {
+    dbgLog(`check session=${sid()} error ${e && e.message ? e.message : e}`);      /* الخدمة نائمة أو غير متاحة: نكمل بدون مشاركة */
+  }
   return false;
 }
 
@@ -236,6 +249,7 @@ async function checkShared() {
       await sdk.ready();
     } catch (e) { sdk = null; /* الـ SDK اختياري: بدونه لا يظهر زر المشاركة */ }
   }
+  dbgLog(`start session=${sid()} inDiscord=${IN_DISCORD} frame=${!!PARAMS.get("frame_id")} api=${API_BASE || "none"}`);
   // فُتحت من رابط مشاركة: custom_id=movie:<معرّف archive.org> فنشغّل الفيلم مباشرة
   const customId = PARAMS.get("custom_id") || (sdk && sdk.customId) || "";
   const shared = /^movie:([A-Za-z0-9._-]{1,200})$/.exec(customId);
