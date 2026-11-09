@@ -202,17 +202,19 @@ function showManualLink(reason) {
 
 shareBtn.addEventListener("click", async () => {
   if (!sdk || !currentItem) return;
-  let note = "";
+  showManualLink("أنتظر نافذة ديسكورد...");        // الرابط يظهر فوراً كبديل مضمون ولا ننتظر ديسكورد
   try {
-    const res = await sdk.commands.shareLink({
-      message: `شاهد معي: ${currentItem.title}`,
-      custom_id: `movie:${currentItem.identifier}`,
-    });
-    note = `رد ديسكورد: ${JSON.stringify(res)}`;
+    const res = await Promise.race([
+      sdk.commands.shareLink({
+        message: `شاهد معي: ${currentItem.title}`,
+        custom_id: `movie:${currentItem.identifier}`,
+      }),
+      new Promise((resolve) => setTimeout(() => resolve("لا رد من ديسكورد بعد 5 ثوانٍ"), 5000)),
+    ]);
+    setStatus(`انسخ الرابط وأرسله في الروم. (رد ديسكورد: ${typeof res === "string" ? res : JSON.stringify(res)})`);
   } catch (e) {
-    note = `رد ديسكورد (خطأ): ${e && e.message ? e.message : e}`;
+    setStatus(`انسخ الرابط وأرسله في الروم. (خطأ ديسكورد: ${e && e.message ? e.message : e})`);
   }
-  showManualLink(note);          // الرابط يظهر دائماً كبديل مضمون، مع رد ديسكورد للتشخيص
 });
 
 (async function main() {
