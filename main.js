@@ -20,7 +20,8 @@ async function main() {
   // الـ Activity أُطلقت من روم الأفلام: نفتح صفحة الأفلام بدل الفقاعات
   const urlParams = new URLSearchParams(location.search);
   const channelIds = [sdk.channelId, urlParams.get("channel_id"), urlParams.get("location_id")].map(String);
-  if (channelIds.some((id) => MOVIES_CHANNELS.includes(id))) {
+  // custom_id=movies من رابط الأفلام (يعمل في أي سيرفر)، أو روم الأفلام المعروف (احتياط)
+  if (sdk.customId === "movies" || urlParams.get("custom_id") === "movies" || channelIds.some((id) => MOVIES_CHANNELS.includes(id))) {
     location.replace("movies.html" + location.search);
     return;
   }

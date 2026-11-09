@@ -27,15 +27,55 @@ function cleanTerm(text) {
   return (text || "").replace(/[+\-&|!(){}\[\]^"~*?:\\\/]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
 }
 
-async function search(term) {
+async function searchArchive(term, rows) {
   const q = `title:(${term}) AND mediatype:movies AND (collection:feature_films OR collection:opensource_movies)`;
-  const params = new URLSearchParams({ q, rows: "20", output: "json" });
+  const params = new URLSearchParams({ q, rows: String(rows), output: "json" });
   for (const f of ["identifier", "title", "year"]) params.append("fl[]", f);
   params.append("sort[]", "downloads desc");
   const r = await fetch(`${base}/advancedsearch.php?${params}`);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const data = await r.json();
   return (data.response && data.response.docs) || [];
+}
+
+// البحث العربي معطّل عمداً: يحتاج مفتاح TMDB، والصفحة عامة فلا نضع المفتاح فيها.
+// يُفعَّل لاحقاً عبر وسيط على البوت يحمل المفتاح (لا يُكتب هنا أبداً).
+const TMDB_KEY = "";
+const tmdbBase = IN_DISCORD ? "/.proxy/tmdb" : "https://api.themoviedb.org";
+const ARABIC = /[؀-ۿ]/;
+
+async function englishTitles(arabicTerm) {
+  const params = new URLSearchParams({ api_key: TMDB_KEY, query: arabicTerm, language: "en-US", include_adult: "false" });
+  const r = await fetch(`${tmdbBase}/3/search/movie?${params}`);
+  if (!r.ok) throw new Error(`TMDB HTTP ${r.status}`);
+  const data = await r.json();
+  const titles = [];
+  for (const m of data.results || []) {
+    for (const t of [m.title, m.original_title]) {
+      const clean = cleanTerm(t || "");
+      if (clean && /[A-Za-z]/.test(clean) && !titles.includes(clean)) titles.push(clean);
+    }
+    if (titles.length >= 6) break;
+  }
+  return titles.slice(0, 6);
+}
+
+async function search(term) {
+  if (!ARABIC.test(term)) return searchArchive(term, 20);
+  if (!TMDB_KEY) throw new Error("البحث بالعربي غير متاح حالياً، اكتب الاسم بالإنجليزية");
+  setStatus("أترجم الاسم...");
+  const titles = await englishTitles(term);
+  if (!titles.length) return [];
+  setStatus(`أبحث عن: ${titles.slice(0, 3).join(" • ")}`);
+  const batches = await Promise.all(titles.map((t) => searchArchive(`"${t}"`, 6).catch(() => [])));
+  const seen = new Set();
+  const merged = [];
+  for (const docs of batches) {
+    for (const d of docs) {
+      if (!seen.has(d.identifier)) { seen.add(d.identifier); merged.push(d); }
+    }
+  }
+  return merged.slice(0, 20);
 }
 
 // ملفات MP4 مرتبة من الأعلى دقة (حتى 1080) إلى الأقل؛ ديسكورد لا يفكّ صورة OGV فنستبعده
