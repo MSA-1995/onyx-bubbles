@@ -21,11 +21,14 @@ let sdk = null;
 function dbgLog(msg) {
   console.log("[movies]", msg);
   const el = $("dbg");
-  if (el) el.textContent = `v16 • ${msg}`;
+  if (el) el.textContent = `${VERSION} • client=${CLIENT} • ${msg}`;
 }
 // مفتاح الروم: نربط المشاركة برقم الروم (لا يتغير بين الحسابين) وليس برقم الجلسة (يختلف إذا تعددت الجلسات)
+const VERSION = "v17";
+const CLIENT = Math.random().toString(36).slice(2, 10);       // رقم عشوائي لكل تحميل للصفحة: يظهر في سجل الخدمة لتمييز الحسابين
+let pollNo = 0;
 const roomKey = () => (sdk ? `ch-${sdk.guildId || "g"}-${sdk.channelId || "c"}`.replace(/[^A-Za-z0-9_-]/g, "") : "");
-const sid = () => (sdk ? roomKey().slice(-10) : "no-sdk");
+const sid = () => (sdk ? roomKey() : "no-sdk");        // رقم الروم كاملاً لنقارنه بين الحسابين
 $("toggle").addEventListener("click", () => wrap.classList.toggle("search"));
 
 function setStatus(text, cls) {
@@ -214,7 +217,7 @@ shareBtn.addEventListener("click", async () => {
   if (!sdk || !currentItem) return;
   showManualLink("");                               // الرابط يظهر فوراً (يفيد لو بدأت جلسة جديدة)
   try {
-    const params = new URLSearchParams({ instance: roomKey(), movie: currentItem.identifier, title: currentItem.title || "" });
+    const params = new URLSearchParams({ instance: roomKey(), movie: currentItem.identifier, title: currentItem.title || "", c: CLIENT, v: VERSION });
     const r = await fetch(`${API_BASE}/now/set?${params}`);
     dbgLog(`share set room=${sid()} movie=${currentItem.identifier} http=${r.status}`);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -228,18 +231,23 @@ shareBtn.addEventListener("click", async () => {
 // نسأل الخدمة عند الفتح ثم كل 3 ثوانٍ ما دمنا لم نشغّل شيئاً (المشاركة تبقى 10 ثوانٍ فقط)
 async function checkShared() {
   if (!sdk || !API_BASE || currentItem) return false;
-  if (document.activeElement === input || input.value) return false;        // لا نقاطع من يكتب بحثاً
+  if (input.value.trim()) {                                                 // لا نقاطع من كتب نصاً في البحث (التركيز وحده لا يكفي)
+    dbgLog(`poll skipped: search box has text`);
+    return false;
+  }
   try {
-    const r = await fetch(`${API_BASE}/now?instance=${encodeURIComponent(roomKey())}`);
-    if (!r.ok) { dbgLog(`check session=${sid()} http=${r.status}`); return false; }
+    pollNo += 1;
+    const r = await fetch(`${API_BASE}/now?instance=${encodeURIComponent(roomKey())}&c=${CLIENT}&v=${VERSION}`);
+    if (!r.ok) { dbgLog(`poll #${pollNo} room=${sid()} http=${r.status}`); return false; }
     const data = await r.json();
     if (data && data.movie && /^[A-Za-z0-9._-]{1,200}$/.test(data.movie)) {
-      dbgLog(`check session=${sid()} FOUND ${data.movie}`);
+      dbgLog(`poll #${pollNo} room=${sid()} FOUND ${data.movie}`);
       play({ identifier: data.movie, title: data.title || "" });
       return true;
     }
+    dbgLog(`poll #${pollNo} room=${sid()} none`);
   } catch (e) {
-    dbgLog(`check session=${sid()} error ${e && e.message ? e.message : e}`);      /* الخدمة نائمة أو غير متاحة: نكمل بدون مشاركة */
+    dbgLog(`poll #${pollNo} room=${sid()} error ${e && e.message ? e.message : e}`);      /* الخدمة نائمة أو غير متاحة: نكمل بدون مشاركة */
   }
   return false;
 }
