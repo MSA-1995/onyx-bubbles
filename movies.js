@@ -7,7 +7,9 @@ const PARAMS = new URLSearchParams(location.search);
 const ITEM = PARAMS.get("id") || "nightofthelivingdead_201910";
 const FILE = PARAMS.get("file") || "Night Of The Living Dead.ogv";
 const TITLE = PARAMS.get("title") || "Night of the Living Dead (1968)";
-const IN_DISCORD = !!PARAMS.get("frame_id");
+const VERSION = "v3";
+// داخل ديسكورد: الصفحة تُخدَّم من <client_id>.discordsays.com (لا نعتمد على frame_id لأنه يضيع عند التنقل بين الصفحات)
+const IN_DISCORD = location.hostname.endsWith("discordsays.com") || !!PARAMS.get("frame_id");
 
 const logBox = document.getElementById("log");
 const video = document.getElementById("player");
@@ -39,10 +41,15 @@ async function probe() {
 }
 
 async function main() {
-  if (IN_DISCORD) {
-    const sdk = new DiscordSDK(CLIENT_ID);
-    await sdk.ready();
-    log(`الروم: ${sdk.channelId}`);
+  log(`إصدار الصفحة: ${VERSION} • الموقع: ${location.hostname} • معاملات: ${[...PARAMS.keys()].join(",") || "لا شيء"}`);
+  if (IN_DISCORD && PARAMS.get("frame_id")) {     // الـ SDK اختياري هنا: التشغيل عبر /.proxy لا يحتاجه
+    try {
+      const sdk = new DiscordSDK(CLIENT_ID);
+      await sdk.ready();
+      log(`الروم: ${sdk.channelId}`);
+    } catch (e) {
+      log(`SDK: ${e && e.message ? e.message : e}`, false);
+    }
   }
   await probe();
   video.addEventListener("error", () => {
