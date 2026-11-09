@@ -22,7 +22,10 @@
   #toggle,#share{display:none;align-self:center;background:#2b3050;color:#fff;border:0;border-radius:8px;padding:4px 14px;cursor:pointer;font-size:12px}
   #wrap.playing{padding:6px;gap:4px}
   #wrap.playing #toggle,#wrap.playing #share:not([hidden]){display:block}
-  #wrap.playing #form,#wrap.playing #results,#wrap.playing #status,#wrap.playing #foot{display:none}
+  #sharebox{display:flex;justify-content:center}
+  #sharebox[hidden]{display:none!important}
+  #wrap.playing #form,#wrap.playing #results,#wrap.playing #status,#wrap.playing #foot,#wrap.playing #sharebox{display:none}
+  #wrap.playing.search #sharebox:not([hidden]){display:flex}
   #wrap.playing.search #form,#wrap.playing.search #results,#wrap.playing.search #status{display:flex}
   #wrap.playing.search #status{display:block}
   #wrap.playing.search #player{flex:.5}
@@ -37,10 +40,11 @@
   </div>
   <form id="form"><input id="q" placeholder="اكتب اسم الفيلم (عربي أو إنجليزي)" autocomplete="off"><button type="submit">بحث</button></form>
   <div id="status"></div>
+  <div id="sharebox" hidden><input id="sharelink" readonly style="width:90%;background:#171b30;color:#9cf;border:1px solid #2b3050;border-radius:8px;padding:6px 10px;font-size:12px;direction:ltr"></div>
   <div id="results"></div>
   <video id="player" controls playsinline preload="metadata"></video>
   <div id="foot">الأفلام من archive.org (ملكية عامة) • Onyx</div>
 </div>
-<script src="movies_app.js?v=10"></script>
+<script src="movies_app.js?v=11"></script>
 </body>
 </html>

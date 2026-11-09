@@ -185,16 +185,31 @@ video.addEventListener("error", () => {
 });
 
 // مشاركة الفيلم الحالي: ديسكورد يفتح نافذة اختيار الروم ويرسل رابطاً باسمك؛ من يضغطه يفتح نفس الفيلم داخل ديسكورد
+const shareBox = $("sharebox");
+const shareLinkInput = $("sharelink");
+
+function showManualLink(reason) {
+  // بديل مضمون: رابط يفتح نفس الفيلم داخل ديسكورد (نفس طريقة زر «شاهد فيلمك»)؛ تلصقه في الروم يدوياً
+  const link = `https://discord.com/activities/${CLIENT_ID}?custom_id=${encodeURIComponent("movie:" + currentItem.identifier)}`.replace("%3A", ":");
+  shareLinkInput.value = link;
+  shareBox.hidden = false;
+  wrap.classList.add("search");
+  setStatus(reason ? `${reason} — انسخ الرابط وأرسله في الروم:` : "انسخ الرابط وأرسله في الروم:", reason ? "bad" : "");
+  shareLinkInput.focus();
+  shareLinkInput.select();
+  try { navigator.clipboard.writeText(link); } catch (e) { /* قد يُمنع داخل الإطار */ }
+}
+
 shareBtn.addEventListener("click", async () => {
   if (!sdk || !currentItem) return;
   try {
-    await sdk.commands.shareLink({
+    const res = await sdk.commands.shareLink({
       message: `شاهد معي: ${currentItem.title}`,
       custom_id: `movie:${currentItem.identifier}`,
     });
+    if (!res || res.success !== true) showManualLink("لم تفتح نافذة المشاركة");
   } catch (e) {
-    setStatus(`تعذّرت المشاركة: ${e && e.message ? e.message : e}`, "bad");
-    wrap.classList.add("search");
+    showManualLink(`تعذّرت المشاركة (${e && e.message ? e.message : e})`);
   }
 });
 
