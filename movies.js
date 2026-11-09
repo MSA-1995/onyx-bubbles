@@ -78,12 +78,40 @@ async function search(term) {
   return merged.slice(0, 20);
 }
 
-// ملفات MP4 مرتبة من الأعلى دقة (حتى 1080) إلى الأقل؛ ديسكورد لا يفكّ صورة OGV فنستبعده
+// ملفات MP4 وWebM مرتبة من الأعلى دقة (حتى 1080) إلى الأقل؛ عند التساوي MP4 أولاً ثم الأصغر حجماً.
+// ديسكورد لا يفكّ صورة OGV ولا MKV فنستبعدهما
 function pickFiles(files) {
-  const mp4 = (files || []).filter((f) => /\.mp4$/i.test(f.name || "") && Number(f.size) > 0);
+  const ok = (files || []).filter((f) => /\.(mp4|webm)$/i.test(f.name || "") && Number(f.size) > 0);
   const heightOf = (f) => Math.min(Number(f.height) || 0, 1080);
-  mp4.sort((a, b) => heightOf(b) - heightOf(a) || Number(a.size) - Number(b.size));
-  return mp4;
+  const rank = (f) => (/\.mp4$/i.test(f.name) ? 0 : 1);
+  ok.sort((a, b) => heightOf(b) - heightOf(a) || rank(a) - rank(b) || Number(a.size) - Number(b.size));
+  return ok;
+}
+
+// دقة ومدة أفضل نسخة قابلة للتشغيل، لعرضها بجانب النتيجة
+function describe(files) {
+  const best = pickFiles(files)[0];
+  if (!best) return null;
+  const secs = parseFloat(best.length);
+  return { height: Number(best.height) || 0, minutes: Number.isFinite(secs) ? Math.round(secs / 60) : 0 };
+}
+
+async function enrich(doc, btn, label) {
+  try {
+    const r = await fetch(`${base}/metadata/${encodeURIComponent(doc.identifier)}`);
+    if (!r.ok) return;
+    const meta = await r.json();
+    const info = describe(meta.files);
+    if (!info) {
+      btn.textContent = `${label} • لا يُشغَّل`;
+      btn.classList.add("dim");
+      return;
+    }
+    const parts = [];
+    if (info.height) parts.push(`${Math.min(info.height, 1080)}p`);
+    if (info.minutes) parts.push(`${info.minutes} د`);
+    if (parts.length) btn.textContent = `${label} • ${parts.join(" • ")}`;
+  } catch (e) { /* نترك الاسم بدون تفاصيل */ }
 }
 
 let candidates = [];
@@ -130,9 +158,11 @@ function showResults(docs) {
   setStatus(`${docs.length} نتيجة. اختر فيلماً:`);
   for (const d of docs) {
     const b = document.createElement("button");
-    b.textContent = `${d.title || d.identifier}${d.year ? " (" + d.year + ")" : ""}`;
+    const label = `${d.title || d.identifier}${d.year ? " (" + d.year + ")" : ""}`;
+    b.textContent = label;
     b.onclick = () => play(d);
     results.appendChild(b);
+    enrich(d, b, label);          // الدقة والمدة تظهر بعد لحظات بجانب الاسم
   }
 }
 

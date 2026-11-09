@@ -25,6 +25,7 @@ async function main() {
     location.replace("movies.html" + location.search);
     return;
   }
+  document.documentElement.classList.remove("pending");      // ليست روم الأفلام: نُظهر الفقاعات
   const render = (participants) => show([
     ...base,
     `الجلسة (instance): <b>${sdk.instanceId.slice(0, 8)}</b>`,
@@ -36,4 +37,7 @@ async function main() {
   sdk.subscribe("ACTIVITY_INSTANCE_PARTICIPANTS_UPDATE", (e) => render(e.participants));
 }
 
-main().catch((e) => show([`خطأ: ${e && e.message ? e.message : e}`]));
+main().catch((e) => {
+  document.documentElement.classList.remove("pending");
+  show([`خطأ: ${e && e.message ? e.message : e}`]);
+});
