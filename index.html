@@ -4,19 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>فقاعات الأذكار - مسجد</title>
-<script>
-// فتح من رابط الأفلام: ننتقل فوراً قبل ظهور أي شيء؛ وغير ذلك داخل ديسكورد: نخفي المشهد حتى يتحدد الروم (احتياط 3 ثوانٍ)
-(function () {
-  var q = new URLSearchParams(location.search);
-  if ((q.get("custom_id") || "").indexOf("movie") === 0) { location.replace("movies.html" + location.search); return; }
-  if (q.get("frame_id")) {
-    document.documentElement.classList.add("pending");
-    setTimeout(function () { document.documentElement.classList.remove("pending"); }, 3000);
-  }
-})();
-</script>
 <style>
-  html.pending body{visibility:hidden}
   html,body{margin:0;height:100%;overflow:hidden;background:#050920;font-family:"Segoe UI",Tahoma,sans-serif;user-select:none}
   #bg{position:fixed;inset:0;overflow:hidden;background:linear-gradient(180deg,#050920 0%,#181350 58%,#2f1c52 100%)}
   #bg>*{position:absolute;pointer-events:none}
@@ -121,7 +109,7 @@ function pop(b){
   z.style.left=Math.min(Math.max(x,110),innerWidth-110)+'px';z.style.top=y+'px';sky.appendChild(z);setTimeout(()=>z.remove(),1950)}
 for(let i=0;i<6;i++)setTimeout(spawn,i*500);setInterval(spawn,900);
 </script>
-<script src="app.js?v=5"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>
 
